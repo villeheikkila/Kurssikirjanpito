@@ -8,6 +8,10 @@ int op = 0;
 
 int lisaa_opiskelija(struct opiskelija *db, char *str1, char *str2, char *str3) {
       int opnro;
+      char sukunimi, etunimi;
+      sscanf(str1, "%d", &opnro);
+      sscanf(str2, "%s", &sukunimi);
+      sscanf(str3, "%s", &etunimi);
       if (strlen(str1) > 6) {
             printf("Virhe! Opiskelijanumero on liian pitka!\n");
       }
@@ -15,12 +19,11 @@ int lisaa_opiskelija(struct opiskelija *db, char *str1, char *str2, char *str3) 
             printf("Virhe! Nimi on liian pitka!\n");
       }
       else {
-            sscanf(str1, "%d", &opnro);
             db[op].opnro = opnro;
             db[op].etunimi = malloc(sizeof(char)*strlen(str3) + 1);       // Varataan muisti etunimelle.
-            db[op].sukunimi = malloc(sizeof(char)*strlen(str2) + 1);      // Varataan muisti sukunimelle.
-            strcpy(db[op].etunimi, str3);
-            strcpy(db[op].sukunimi, str2);
+            db[op].sukunimi = malloc(sizeof(char)*strlen(str1) + 1);      // Varataan muisti sukunimelle.
+            strcpy(db[op].etunimi, etunimi);
+            strcpy(db[op].sukunimi, sukunimi);
             db[op].pisteet_yhteensa = 0;
             for (int a = 0; a < 6; a++){
                   db[op].pisteet[a] = 0;
@@ -28,12 +31,13 @@ int lisaa_opiskelija(struct opiskelija *db, char *str1, char *str2, char *str3) 
             printf("Opiskelija %s %s lisatty onnistuneesti!\n", db[op].sukunimi, db[op].etunimi);
             op++;
     }
+    return 0;
  }
 
 
  int tulosta_opiskelijat(struct opiskelija *db) {
       // Järjestetään opiskelijat kokonaispistemäärän mukaan.
-      int list[op];
+      int *list = malloc(op * sizeof(int));
       for (int i = 0; i < op; i++) {
             list[i] = db[i].pisteet_yhteensa;
       }
@@ -58,6 +62,8 @@ int lisaa_opiskelija(struct opiskelija *db, char *str1, char *str2, char *str3) 
                   }
             }
       }
+      free(list);
+      return 0;
  }
 
 int paivita_pisteet(struct opiskelija *db, char *str1, char *str2, char *str3) {
@@ -89,14 +95,16 @@ int paivita_pisteet(struct opiskelija *db, char *str1, char *str2, char *str3) {
             db[indeksi].pisteet_yhteensa = yhteensa;
             printf("Pisteet paivitetty onnistuneesti!\n");
     }
+    return 0;
 }
 
 int lataa_tulokset(struct opiskelija *db, char *str1) {
       int yhteensa, opnro, p1, p2, p3, p4, p5, p6;
-      char sukunimi[21], etunimi[21];
+      char sukunimi, etunimi, sijainti;
+      sscanf(str1, "%s", &sijainti);
       op = 0; // Nollataan globaali muuttuja.
       // Avataan tiedosto str1 osoittamalla nimellä.
-      FILE *f = fopen(str1, "r");
+      FILE *f = fopen(sijainti, "r");
       if (f == NULL) {
             printf("Virhe! Tiedosto on tyhja!\n");
       }
@@ -104,7 +112,7 @@ int lataa_tulokset(struct opiskelija *db, char *str1) {
             // Luetaan tiedosto ja päivitetään tiedot tietokantaan.
             char str[100];
             while(fgets(str, 100, f)) {
-                  sscanf(str, "%6d %20s %20s %2d %2d %2d %2d %2d %2d %2d", &opnro, &sukunimi, &etunimi, &yhteensa, &p1, &p2, &p3, &p4, &p5, &p6);
+                  sscanf(str, "%d %s %s %d %d %d %d %d %d %d", &opnro, &sukunimi, &etunimi, &yhteensa, &p1, &p2, &p3, &p4, &p5, &p6);
                   db[op].opnro = opnro;
                   db[op].etunimi = malloc(sizeof(char)*strlen(etunimi) + 1);
                   db[op].sukunimi = malloc(sizeof(char)*strlen(sukunimi) + 1);
@@ -119,16 +127,19 @@ int lataa_tulokset(struct opiskelija *db, char *str1) {
                   db[op].pisteet[5] = p6;
                   op++;
       }
-      printf("Tulokset ladattu onnistuneesti tiedostosta: %s\n", str1);
+      printf("Tulokset ladattu onnistuneesti tiedostosta: %s\n", sijainti);
     }
     fclose(f);      // Suljetaan tiedosto.
+    return 0;
 }
 
 int tallenna_tulokset(struct opiskelija *db, char *str1) {
       // Avataan tiedosto str1 osoittamalla nimellä.
-      FILE *f = fopen(str1, "w");
+      char sijainti;
+      sscanf(str1, "%s", &sijainti);
+      FILE *f = fopen(sijainti, "w");
       // Järjestetään opiskelijat kokonaispistemäärän mukaan.
-      int list[op];
+      int *list = malloc(op * sizeof(int));
       for (int i = 0; i < op; i++) {
             list[i] = db[i].pisteet_yhteensa;
       }
@@ -154,7 +165,9 @@ int tallenna_tulokset(struct opiskelija *db, char *str1) {
             }
       }
       fclose(f);
-      printf("Tulokset tallenettiin tiedostoon nimelta: %s!\n", str1);
+      free(list);
+      printf("Tulokset tallenettiin tiedostoon nimelta: %s!\n", sijainti);
+      return 0;
 }
 
 int vapauta_muisti(struct opiskelija *db) {
@@ -166,11 +179,13 @@ int vapauta_muisti(struct opiskelija *db) {
       }
       free(db);
       }
+      return 0;
 }
 
 int main() {
-      char tehtava, komento[300], str1[100], str2[100], str3[100];      // Varaudutaan pitkiin komentoihin.
-      struct opiskelija *lista = malloc(sizeof(struct opiskelija));     // Varataan muisti listalle opiskelijoista.
+      char tehtava, komento[300], str1, str2, str3;      // Varaudutaan pitkiin komentoihin.
+      //struct opiskelija *lista = malloc(sizeof(struct opiskelija));     // Varataan muisti listalle opiskelijoista.
+      struct opiskelija lista[100];
       while(fgets(komento, 300, stdin) != NULL) {
             sscanf(komento, "%s %s %s %s", &tehtava, &str1, &str2, &str3);      // Pilkotaan komento osiin.
             if (tehtava == 'A') {
